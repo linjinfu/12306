@@ -1,0 +1,227 @@
+ <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<title>Flappy Bird</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	
+	<div id="aa">
+		<script>
+		document.getElementById("aa").style.backgroundColor="#555";
+	</script>
+	<script type="text/javascript">
+		
+		var ctx;
+		var cwidth = 400;
+		var cheight = 600;
+		var objects = [];
+		var birdIndex = 0;
+		var ver1 = 10;
+		var ver2;
+		var gravity = 2;
+		var pipe_height = 200;
+		var velocity = 10;
+		var tid;
+		var score = 0;
+		var isScore = false;
+
+		var birds = ["./images/0.gif","./images/1.gif","./images/2.gif"];
+
+		var back = new Background(0,0,400,600,"./images/bg.png");
+		var up_pipe = new UpPipe(0,0,100,200,"./images/pipe.png");
+		var down_pipe = new DownPipe(0,400,100,200,"./images/pipe.png");
+		var ground = new Background(0,550,400,200,"./images/ground.png");
+		var bird = new Bird(80,300,40,40,birds);
+	
+	objects.push(back);
+	objects.push(up_pipe);
+	objects.push(down_pipe);
+	objects.push(ground);
+	objects.push(bird);
+	//上管道
+	function UpPipe(x,y,width,height,img_src){
+			this.px = x;
+			this.py = y;
+			this.pwidth = width;
+			this.pheight = height;
+			this.img_src = img_src;
+			this.draw = drawUpPipe;
+		}
+	//下管道
+	function DownPipe(x,y,width,height,img_src){
+			this.px = x;
+			this.py = y;
+			this.pwidth = width;
+			this.pheight = height;
+			this.img_src = img_src;
+			this.draw = drawDownPipe;
+		}
+	//画出上管道
+		function drawUpPipe(){
+			var image = new Image();
+			image.src = this.img_src;
+			ctx.drawImage(image,150,500,150,800,this.px,this.py,this.pwidth,this.pheight);
+		}
+
+	//画出下管道
+	function drawDownPipe(){
+			var image = new Image();
+			image.src = this.img_src;
+			ctx.drawImage(image,0,500,150,500,this.px,this.py,this.pwidth,this.pheight);
+		}
+
+	//背景图
+	function Background(x,y,width,height,img_src){
+			this.bgx = x;
+			this.bgy = y;
+			this.bgwidth = width;
+			this.bgheight = height;
+			var image = new Image();
+			image.src = img_src;
+			this.img = image;
+			this.draw = drawbg;
+		}
+	//画出背景图
+		function drawbg(){
+			ctx.drawImage(this.img,this.bgx,this.bgy,this.bgwidth,this.bgheight);
+		}
+	//小鸟ground.png
+	function Bird(x,y,width,height,img_srcs){
+			this.bx = x;
+			this.by = y;
+			this.bwidth = width;
+			this.bheight = height;
+			this.imgs = img_srcs;
+			this.draw = drawbird;
+		}
+	//画出小鸟,通过取余的方法来使小鸟不断地更换图片，挥动翅膀
+	function drawbird(){
+	birdIndex++;
+	var image = new Image();
+	image.src = this.imgs[birdIndex%3];
+	ctx.drawImage(image,this.bx,this.by,this.bwidth,this.bheight);
+	}
+	function calculator(){
+				if(bird.by+bird.bheight>ground.bgy ||
+				((bird.bx+bird.bwidth>up_pipe.px)&&(bird.by>up_pipe.py)&&(bird.bx+bird.bwidth<up_pipe.px+up_pipe.pwidth)&&(	bird.by<up_pipe.py+up_pipe.pheight))||
+				((bird.bx>down_pipe.px)&&(bird.by>down_pipe.py)&&(bird.bx<down_pipe.px+down_pipe.pwidth)&&(bird.by<down_pipe.py+down_pipe.pheight))||
+				((bird.bx+bird.bwidth>down_pipe.px)&&(bird.by+bird.bheight>down_pipe.py)&&(bird.bx<down_pipe.px+down_pipe.pwidth)&&(bird.by+bird.bheight<down_pipe.py+down_pipe.pheight))){
+				clearInterval(tid);
+				ctx.fillStyle = "rgb(255,255,255)";
+				ctx.font = "30px Accent";
+				ctx.fillText("You got "+score+"!",110,100)
+				return;
+			}
+			//小鸟自由下落
+			ver2 = ver1 + gravity;
+			bird.by += (ver2 + ver1)*0.5;
+			if(up_pipe.px +up_pipe.pwidth>0){
+			up_pipe.px-=velocity;
+			down_pipe.px -=velocity;//让上下管子自动移动
+			}else{
+			up_pipe.px =400;
+			down_pipe.px =400;
+			up_pipe.pheight = 100+Math.random()*200;
+			down_pipe.py = up_pipe.pheight+pipe_height;
+			down_pipe.pheight = 600 - down_pipe.py;
+			isScore = true;
+			}
+			if(isScore && bird.bx >up_pipe.px + up_pipe.pwidth){
+			score+= 1;
+			isScore = false;
+			//每过10根柱子就增加难度
+			if(score>0 && score %10 == 0 ){
+				veloocity++;
+				}
+			}
+			ctx.fillStyle = "rgb(255,255,255)";
+			ctx.font = "30px Accent";
+			if(score>0){
+				score%10!==0?ctx.fillText(score,180,100):ctx.fillText("Great!"+score,120,100);
+				}
+			}
+			//出所有事物
+			function drawall(){
+			ctx.clearRect(0,0,cwidth,cheight);
+			var i;
+			for(i=0;i<objects.length;i++){
+				objects[i].draw();
+			}
+			calculator();
+		}
+			//键盘监听
+			function keyup(e){
+					var e = e || event;
+					var currKey = e.keyCode || e.which || e.charCode;
+					switch(currKey){
+					case 32:
+					bird.by-= 80;
+					break;
+					}
+				}
+		function init(){
+			ctx = document.getElementById('huatu').getContext('2d');
+			document.onkeyup = keyup;
+			drawall();
+			tid = setInterval(drawall,80);
+		}
+			
+</script>
+</head>
+<body onLoad="init();">
+<canvas id="huatu" width="400" height="620"style="margin-left:200px;">
+Your browser is not support canvas! 
+</canvas>
+
+<script>
+	!function(e, t, a) {
+		function r() {
+			for (var e = 0; e < s.length; e++) s[e].alpha <= 0 ? (t.body.removeChild(s[e].el), s.splice(e, 1)) : (s[e].y--, s[e].scale += .004, s[e].alpha -= .013, s[e].el.style.cssText = "left:" + s[e].x + "px;top:" + s[e].y + "px;opacity:" + s[e].alpha + ";transform:scale(" + s[e].scale + "," + s[e].scale + ") rotate(45deg);background:" + s[e].color + ";z-index:99999");
+			requestAnimationFrame(r)
+		}
+		function n() {
+			var t = "function" == typeof e.onclick && e.onclick;
+			e.onclick = function(e) {
+				t && t(),
+					o(e)
+			}
+		}
+		function o(e) {
+			var a = t.createElement("div");
+			a.className = "heart",
+				s.push({
+					el: a,
+					x: e.clientX - 5,
+					y: e.clientY - 5,
+					scale: 1,
+					alpha: 1,
+					color: c()
+				}),
+				t.body.appendChild(a)
+		}
+		function i(e) {
+			var a = t.createElement("style");
+			a.type = "text/css";
+			try {
+				a.appendChild(t.createTextNode(e))
+			} catch(t) {
+				a.styleSheet.cssText = e
+			}
+			t.getElementsByTagName("head")[0].appendChild(a)
+		}
+		function c() {
+			return "rgb(" + ~~ (255 * Math.random()) + "," + ~~ (255 * Math.random()) + "," + ~~ (255 * Math.random()) + ")"
+		}
+		var s = [];
+		e.requestAnimationFrame = e.requestAnimationFrame || e.webkitRequestAnimationFrame || e.mozRequestAnimationFrame || e.oRequestAnimationFrame || e.msRequestAnimationFrame ||
+			function(e) {
+				setTimeout(e, 1e3 / 60)
+			},
+			i(".heart{width: 10px;height: 10px;position: fixed;background: #f00;transform: rotate(45deg);-webkit-transform: rotate(45deg);-moz-transform: rotate(45deg);}.heart:after,.heart:before{content: '';width: inherit;height: inherit;background: inherit;border-radius: 50%;-webkit-border-radius: 50%;-moz-border-radius: 50%;position: fixed;}.heart:after{top: -5px;}.heart:before{left: -5px;}"),
+			n(),
+			r()
+	} (window, document);
+
+</script>
+</div>
+</body>
+</html>
